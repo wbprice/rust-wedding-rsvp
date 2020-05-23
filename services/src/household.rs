@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use rusoto_core::Region;
-use rusoto_dynamodb::{DynamoDb, DynamoDbClient, WriteRequest, PutRequest, BatchWriteItemInput};
+use rusoto_dynamodb::{DynamoDb, DynamoDbClient, WriteRequest, PutRequest, BatchWriteItemInput, BatchWriteItemOutput};
 use models::{Household, Person};
 use uuid::Uuid;
 use anyhow::Result;
@@ -22,7 +22,7 @@ impl HouseholdService {
         }
     }
 
-    pub async fn put(self, people: Vec<Person>) -> Result<Household> {
+    pub async fn put(self, people: Vec<Person>) -> Result<BatchWriteItemOutput> {
         let household = Household {
             id: Uuid::new_v4(),
             people: people.clone()
@@ -47,10 +47,7 @@ impl HouseholdService {
             ..BatchWriteItemInput::default()
         };
 
-        match self.client.batch_write_item(batch_write_request_input).await {
-            Ok(_) => Ok(household),
-            Err(_) => Ok(household)
-        }
+        Ok(self.client.batch_write_item(batch_write_request_input).await?)
     }
 }
 
@@ -58,10 +55,9 @@ impl HouseholdService {
 mod tests {
     use super::HouseholdService;
     use models::{Person, Contact};
-    use tokio::test;
 
-    #[test]
-    fn it_should_create_a_service() {
+    #[tokio::test]
+    async fn it_should_create_a_service() {
         let _household_service = HouseholdService::new();
         assert!(true);
     }
@@ -85,9 +81,17 @@ mod tests {
                 rsvp: None
             }
         ];
+
         let household = service.put(people).await;
-        dbg!(household);
-        // assert_eq!(household.people[0].name, "John".to_string());
-        // assert_eq!(household.people[1].name, "Sally".to_string());
+        match household {
+            Ok(result) => {
+                dbg!(result);
+                assert!(true)
+            }, 
+            Err(err) => {
+                dbg!(err);
+                assert!(false)
+            }
+        };
     }
 }
