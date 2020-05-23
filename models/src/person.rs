@@ -1,11 +1,15 @@
 use crate::rsvp::RSVP;
-enum Contact {
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Contact {
     Email { value: String },
-    Sms { value : String }
+    SMS { value : String }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Person {
-    name: String,
-    contact: Contact,
-    rsvp: Option<RSVP>
+    pub name: String,
+    pub contact: Contact,
+    pub rsvp: Option<RSVP>
 }

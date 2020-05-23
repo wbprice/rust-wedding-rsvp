@@ -114,3 +114,15 @@ $ npx serverless remove
 ## 👯 Contributing
 
 This template's intent is to set a minimal baseline for getting engineers up an running with a set of repeatable best practices. See something you'd like in this template that would help others? Feel free to [open a new github issue](https://github.com/softprops/serverless-aws-rust-multi/issues/new). Pull requests are also welcome.
+
+
+## DynamoDB Table
+
+```
+aws dynamodb create-table
+  --table-name rsvp_table
+  --attribute-definitions AttributeName=householdId,AttributeType=S
+  --key-schema AttributeName=householdId,KeyType=HASH
+  --billing-mode PAY_PER_REQUEST
+  --endpoint-url http://localhost:8000
+```

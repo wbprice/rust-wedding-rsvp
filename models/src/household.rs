@@ -1,8 +1,9 @@
 use uuid::Uuid;
 use crate::Person;
 
+#[derive(Debug)]
 pub struct Household {
-    id: Uuid,
-    people: Vec<Person>
+    pub id: Uuid,
+    pub people: Vec<Person>
 }
 

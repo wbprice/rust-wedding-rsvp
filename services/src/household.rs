@@ -1,5 +1,7 @@
-use rusoto::DynamoDBClient::{DynamoDb, DynamoDBClient};
-use crate::models::Household;
+use std::collections::HashMap;
+use rusoto_core::Region;
+use rusoto_dynamodb::{DynamoDb, DynamoDbClient, WriteRequest, PutRequest, BatchWriteItemInput};
+use models::{Household, Person};
 use uuid::Uuid;
 use anyhow::Result;
 
@@ -10,24 +12,79 @@ pub struct HouseholdService {
 impl HouseholdService {
 
     pub fn new() -> HouseholdService {
+        let region = Region::Custom {
+            name: "us-east-1".to_owned(),
+            endpoint: "http://localhost:8000".to_owned(),
+        };
+
         HouseholdService {
-            client: DynamoDbClient::new("us-east-1")
+            client: DynamoDbClient::new(region)
         }
     }
 
-    pub async fn put(household: Household) -> Result<Household> {
+    pub async fn put(&self, people: Vec<Person>) -> Result<Household> {
+        let household = Household {
+            id: Uuid::new_v4(),
+            people: people.clone()
+        };
 
-    }
+        let put_requests: Vec<WriteRequest> = household
+            .people
+            .iter()
+            .map(|person| WriteRequest {
+                put_request: Some(PutRequest {
+                    item: serde_dynamodb::to_hashmap(&person).unwrap(),
+                }),
+                ..WriteRequest::default()
+            })
+            .collect();
 
-    pub async fn get(uuid: Uuid) -> Result<Household> {
+        let mut request_items: HashMap<String, Vec<WriteRequest>> = HashMap::new();
+        request_items.insert("rsvp_table".to_string(), put_requests);
 
+        let batch_write_request_input = BatchWriteItemInput {
+            request_items: request_items,
+            ..BatchWriteItemInput::default()
+        };
+
+        self.client.batch_write_item(batch_write_request_input).await?;
+        Ok(household)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::HouseholdService;
+    use models::{Person, Contact};
+
     #[test]
     fn it_should_create_a_service() {
-        let householdService = HouseholdService::new();
+        let _household_service = HouseholdService::new();
+        assert!(true);
+    }
+
+    #[test]
+    fn it_should_create_a_household() {
+        let service = HouseholdService::new();
+        let people = vec![
+            Person {
+                name: "John".to_string(),
+                contact: Contact::Email {
+                    value: "hello@example.com".to_string()
+                },
+                rsvp: None
+            },
+            Person {
+                name: "Sally".to_string(),
+                contact: Contact::SMS {
+                    value: "5555555555".to_string()
+                },
+                rsvp: None
+            }
+        ];
+        let household = service.put(people);
+        dbg!(household);
+        // assert_eq!(household.people[0].name, "John".to_string());
+        // assert_eq!(household.people[1].name, "Sally".to_string());
     }
 }

@@ -3,7 +3,7 @@ mod rsvp;
 mod household;
 
 pub use self::{
-    person::Person,
+    person::{Person, Contact},
     household::Household,
     rsvp::{RSVP}
 };
