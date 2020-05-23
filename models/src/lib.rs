@@ -4,6 +4,6 @@ mod household;
 
 pub use self::{
     person::{Person, Contact},
-    household::Household,
+    household::{Household, HouseholdRecord},
     rsvp::{RSVP}
 };
