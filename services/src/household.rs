@@ -51,7 +51,7 @@ impl HouseholdService {
         request_items.insert("rsvp_table".to_string(), put_requests);
 
         let batch_write_request_input = BatchWriteItemInput {
-            request_items: request_items,
+            request_items,
             ..BatchWriteItemInput::default()
         };
 
@@ -80,7 +80,7 @@ impl HouseholdService {
 
         let response = self.client.query(query_input).await?;
         if let Some(items) = response.items {
-            if items.len() > 0 {
+            if !items.is_empty() {
                 let household_records: Vec<HouseholdRecord> = items
                     .into_iter()
                     .map(|item| serde_dynamodb::from_hashmap(item).unwrap())
@@ -98,7 +98,7 @@ impl HouseholdService {
 
                 return Ok(Some(Household {
                     id: household_id,
-                    people: people,
+                    people
                 }));
             }
         }
