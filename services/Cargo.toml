@@ -14,4 +14,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_dynamodb = "0.5.0"
 serde_json = "1.0.53"
 anyhow = "1.0"
+futures = "0.3"
 models = { path = "../models" }
+tokio = { version = "0.2.21", feature="macros" }

@@ -1099,12 +1099,14 @@ name = "services"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "futures",
  "models",
  "rusoto_core",
  "rusoto_dynamodb",
  "serde",
  "serde_dynamodb",
  "serde_json",
+ "tokio",
  "uuid",
 ]
 
