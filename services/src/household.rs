@@ -62,7 +62,7 @@ mod tests {
         assert!(true);
     }
 
-    #[tokio::test]    
+    #[tokio::test]
     async fn it_should_create_a_household() {
         let service = HouseholdService::new();
         let people = vec![
@@ -87,7 +87,7 @@ mod tests {
             Ok(result) => {
                 dbg!(result);
                 assert!(true)
-            }, 
+            },
             Err(err) => {
                 dbg!(err);
                 assert!(false)
