@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DietaryRestrictions {
@@ -6,14 +6,14 @@ pub enum DietaryRestrictions {
     Vegan,
     Pescetarian,
     GlutenFree,
-    DairyFree
+    DairyFree,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DishPreference {
     Chicken,
     Steak,
-    Seabass
+    Seabass,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,6 +21,6 @@ pub enum RSVP {
     No,
     Yes {
         dietary_restrictions: Option<DietaryRestrictions>,
-        dish_preference: Option<DishPreference>
-    }
+        dish_preference: Option<DishPreference>,
+    },
 }
