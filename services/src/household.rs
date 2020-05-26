@@ -9,22 +9,21 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 pub struct HouseholdService {
-    client: DynamoDbClient,
+    client: Box<DynamoDbClient>,
 }
 
 impl HouseholdService {
-    pub fn new() -> HouseholdService {
+    fn client() -> DynamoDbClient {
         let region = Region::Custom {
             name: "us-east-1".to_owned(),
             endpoint: "http://localhost:8000".to_owned(),
         };
 
-        HouseholdService {
-            client: DynamoDbClient::new(region),
-        }
+        DynamoDbClient::new(region)
     }
 
     pub async fn create(self, people: Vec<Person>) -> Result<Vec<Person>> {
+        let client = self::client();
         if people.is_empty() {
             bail!("A household must have at least one person")
         }
@@ -52,6 +51,19 @@ impl HouseholdService {
             .await?;
 
         Ok(people)
+    }
+
+    pub async fn update(self, household_id: Uuid, people: Vec<Person>) -> Result<Vec<Person>> {
+        // Only records that exist can be updated
+        match self.read(household_id).await? {
+            Some(_) => {
+                self.create(people.clone()).await?;
+                Ok(people)
+            },
+            None => {
+                bail!("That household doesn't exist")
+            }
+        }
     }
 
     pub async fn read(self, household_id: Uuid) -> Result<Option<Vec<Person>>> {
@@ -94,12 +106,6 @@ mod tests {
     use super::HouseholdService;
     use models::{Contact, Person};
     use uuid::Uuid;
-
-    #[tokio::test]
-    async fn it_should_create_a_service() {
-        let _household_service = HouseholdService::new();
-        assert!(true);
-    }
 
     #[tokio::test]
     async fn it_should_create_a_household() {
@@ -171,5 +177,59 @@ mod tests {
             Some(_household) => assert!(false),
             None => assert!(true),
         }
+    }
+
+    #[tokio::test]
+    async fn it_should_update_a_household() {
+        let household_id = Uuid::new_v4();
+        let people = vec![
+            Person {
+                household_id,
+                name: "John".to_string(),
+                contact: Contact::Email {
+                    value: "hello@example.com".to_string(),
+                },
+                rsvp: None,
+                dietary_restrictions: None,
+                dish_preference: None,
+            },
+            Person {
+                household_id,
+                name: "Sally".to_string(),
+                contact: Contact::SMS {
+                    value: "5555555555".to_string(),
+                },
+                rsvp: None,
+                dietary_restrictions: None,
+                dish_preference: None,
+            },
+        ];
+
+        let new_people = vec![
+            Person {
+                household_id,
+                name: "John".to_string(),
+                contact: Contact::Email {
+                    value: "hello@example.com".to_string(),
+                },
+                rsvp: Some(true),
+                dietary_restrictions: None,
+                dish_preference: None,
+            },
+            Person {
+                household_id,
+                name: "Sally".to_string(),
+                contact: Contact::SMS {
+                    value: "5555555555".to_string(),
+                },
+                rsvp: Some(true),
+                dietary_restrictions: None,
+                dish_preference: None,
+            }
+        ];
+
+        HouseholdService::new().create(people).await.unwrap();
+        HouseholdService::put(new_people).await.unwrap();
+
     }
 }
