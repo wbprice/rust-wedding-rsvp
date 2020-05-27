@@ -31,5 +31,5 @@ pub enum DishPreference {
     Chicken,
     Steak,
     Pancakes,
-    Pizza    
+    Pizza,
 }

@@ -8,12 +8,15 @@ use rusoto_dynamodb::{
 use std::collections::HashMap;
 use uuid::Uuid;
 
-pub struct HouseholdService {
-    client: Box<DynamoDbClient>,
-}
+#[derive(Copy, Clone)]
+pub struct HouseholdService;
 
 impl HouseholdService {
-    fn client() -> DynamoDbClient {
+    fn new() -> HouseholdService {
+        HouseholdService {}
+    }
+
+    fn client(self) -> DynamoDbClient {
         let region = Region::Custom {
             name: "us-east-1".to_owned(),
             endpoint: "http://localhost:8000".to_owned(),
@@ -23,7 +26,7 @@ impl HouseholdService {
     }
 
     pub async fn create(self, people: Vec<Person>) -> Result<Vec<Person>> {
-        let client = self::client();
+        let client = self.client();
         if people.is_empty() {
             bail!("A household must have at least one person")
         }
@@ -46,9 +49,7 @@ impl HouseholdService {
             ..BatchWriteItemInput::default()
         };
 
-        self.client
-            .batch_write_item(batch_write_request_input)
-            .await?;
+        client.batch_write_item(batch_write_request_input).await?;
 
         Ok(people)
     }
@@ -59,14 +60,13 @@ impl HouseholdService {
             Some(_) => {
                 self.create(people.clone()).await?;
                 Ok(people)
-            },
-            None => {
-                bail!("That household doesn't exist")
             }
+            None => bail!("That household doesn't exist"),
         }
     }
 
     pub async fn read(self, household_id: Uuid) -> Result<Option<Vec<Person>>> {
+        let client = self.client();
         let mut query = HashMap::new();
 
         query.insert(
@@ -84,7 +84,7 @@ impl HouseholdService {
             ..QueryInput::default()
         };
 
-        let response = self.client.query(query_input).await?;
+        let response = client.query(query_input).await?;
         if let Some(items) = response.items {
             if items.is_empty() {
                 return Ok(None);
@@ -109,7 +109,6 @@ mod tests {
 
     #[tokio::test]
     async fn it_should_create_a_household() {
-        let service = HouseholdService::new();
         let household_id = Uuid::new_v4();
         let people = vec![
             Person {
@@ -134,6 +133,7 @@ mod tests {
             },
         ];
 
+        let service = HouseholdService::new();
         let guests = service.create(people).await.unwrap();
         assert_eq!(guests.len(), 2 as usize);
     }
@@ -163,8 +163,8 @@ mod tests {
                 dish_preference: None,
             },
         ];
-        HouseholdService::new().create(people).await.unwrap();
-
+        let service = HouseholdService::new();
+        service.create(people).await.unwrap();
         match HouseholdService::new().read(household_id).await.unwrap() {
             Some(guests) => assert_eq!(guests.len(), 2 as usize),
             None => assert!(false),
@@ -204,6 +204,7 @@ mod tests {
                 dish_preference: None,
             },
         ];
+        HouseholdService::new().create(people).await.unwrap();
 
         let new_people = vec![
             Person {
@@ -225,11 +226,12 @@ mod tests {
                 rsvp: Some(true),
                 dietary_restrictions: None,
                 dish_preference: None,
-            }
+            },
         ];
 
-        HouseholdService::new().create(people).await.unwrap();
-        HouseholdService::put(new_people).await.unwrap();
-
+        HouseholdService::new()
+            .update(household_id, new_people)
+            .await
+            .unwrap();
     }
 }
